@@ -6,7 +6,7 @@ var express = require('express'),
 var app = express();
 
 app.get('/', function(req, res) {
-  res.send({'hello_you': true});
+  res.send({'hello_bar': true});
 });
 
 app.listen(config.PORT);
