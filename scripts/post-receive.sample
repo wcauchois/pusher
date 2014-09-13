@@ -1,0 +1,8 @@
+#!/bin/bash
+
+cd
+supervisorctl stop pusher
+rm -rf pusher
+git clone pusher.git pusher
+supervisorctl start pusher
+
