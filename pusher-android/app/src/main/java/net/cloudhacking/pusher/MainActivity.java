@@ -10,12 +10,23 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -34,11 +45,14 @@ public class MainActivity extends Activity {
     SharedPreferences prefs;
     Context context;
     String regId;
+    TextView mDisplay;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        mDisplay = (TextView) findViewById(R.id.test_text);
 
         checkPlayServices();
 
@@ -46,7 +60,7 @@ public class MainActivity extends Activity {
         gcm = GoogleCloudMessaging.getInstance(this);
         regId = getRegistrationId(context);
         if (regId.isEmpty()) {
-            registerInBackground();
+            registerInBackground(context);
         }
     }
 
@@ -60,8 +74,8 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void registerInBackground() {
-        new AsyncTask() {
+    private void registerInBackground(final Context context) {
+        new AsyncTask<Void, Void, String>() {
             @Override
             protected String doInBackground(Void... params) {
                 String msg = "";
@@ -71,11 +85,47 @@ public class MainActivity extends Activity {
                     }
                     regId = gcm.register(SENDER_ID);
                     msg = "Device registered, registration ID=" + regId;
+                    sendRegistrationIdToBackend(regId);
+                    storeRegistrationId(context, regId);
                 } catch (IOException ex) {
                     msg = "Error: " + ex.getMessage();
                 }
                 return msg;
             }
+
+            @Override
+            protected void onPostExecute(String msg) {
+                mDisplay.append(msg + "\n");
+            }
+        }.execute();
+    }
+
+    private void storeRegistrationId(Context context, String regId) {
+        final SharedPreferences prefs = getGCMPreferences(context);
+        int appVersion = getAppVersion(context);
+        Log.i(TAG, "Saving regId on app version " + appVersion);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString(PROPERTY_REG_ID, regId);
+        editor.putInt(PROPERTY_APP_VERSION, appVersion);
+        editor.apply();
+    }
+
+    private void sendRegistrationIdToBackend(String regId) {
+        // XXX use AndroidHttpClient?
+        HttpClient client = new DefaultHttpClient();
+        String url = "http://pusher.cloudhacking.net/register_device";
+        HttpPost post = new HttpPost(url);
+        try {
+            List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(1);
+            nameValuePairs.add(new BasicNameValuePair("regId", regId));
+            post.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+
+            HttpResponse response = client.execute(post);
+            if (response.getStatusLine().getStatusCode() != 200) {
+                Log.e(TAG, "Received non-200 response from endpoint");
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to send registration ID to backend");
         }
     }
 
@@ -119,6 +169,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onResume() {
+        super.onResume();
         checkPlayServices();
     }
 
