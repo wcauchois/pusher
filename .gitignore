@@ -1,3 +1,5 @@
 config/production.json
 config/development.json
+*.swp
+.lein-repl-history
 target
