@@ -38,7 +38,7 @@ public class MainActivity extends Activity {
     static final String PROPERTY_REG_ID = "registration_id";
     static final String PROPERTY_APP_VERSION = "app_version";
 
-    static final String SENDER_ID = "586118728363";
+    static final String SENDER_ID = "958671742436"; // "Project number"
 
     GoogleCloudMessaging gcm;
     AtomicInteger msgId = new AtomicInteger();
