@@ -6,7 +6,9 @@
             [monger.util :refer [object-id]]
             [compojure.core :refer :all]
             [compojure.route :as route]
-            [ring.adapter.jetty :refer [run-jetty]])
+            [ring.adapter.jetty :refer [run-jetty]]
+            [ring.middleware.logger :as logger]
+            [clojure.tools.logging :as log])
   (:import [java.util.concurrent Executor]))
 
 (def ^:dynamic *mongo-conn* nil)
@@ -25,19 +27,20 @@
 
 (defn start-polling-thread []
   (let [exit-atom (atom false)]
-    [(doto
-       (Thread.
-         (fn []
-           (println "Waking up")
-           (try (Thread/sleep 1000) (catch InterruptedException e nil))
-           (if (not @exit-atom) (recur))))
-       (.start))
-     exit-atom]))
+    {:exit exit-atom
+     :thread
+       (doto
+         (Thread.
+           (fn []
+             (try (Thread/sleep 1000) (catch InterruptedException e nil))
+             (if (not @exit-atom) (recur))))
+         (.start))
+    }))
 
 (defn stop-polling-thread [t]
-  (let [thread (nth t 0) exit-atom (nth t 1)]
-    (swap! exit-atom (fn [_] true))
-    (doto thread (.interrupt) (.join))))
+  (log/info "Shutting down polling thread")
+  (reset! (:exit t) true)
+  (doto (:thread t) (.interrupt) (.join)))
 
 (defroutes app
   (GET "/" [] "Hello")
@@ -54,5 +57,5 @@
       (Thread. (fn []
                  (println "Shutting down")
                  (stop-polling-thread polling-thread))))
-    (run-jetty app {:port 8080})))
+    (run-jetty (logger/wrap-with-logger app) {:port 8080})))
 

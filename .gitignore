@@ -1,5 +1,6 @@
 config/production.json
 config/development.json
+profiles.clj
 *.swp
 .lein-repl-history
 target
