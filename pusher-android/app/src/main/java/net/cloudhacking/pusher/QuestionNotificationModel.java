@@ -4,6 +4,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
 
 import java.util.Arrays;
 import java.util.List;
@@ -15,7 +16,7 @@ import java.util.List;
 public class QuestionNotificationModel implements Parcelable {
     public static class ResponseOption implements Parcelable  {
         private String answer;
-        private String code;
+        private int code;
 
         public ResponseOption(Parcel in) {
             readFromParcel(in);
@@ -29,12 +30,12 @@ public class QuestionNotificationModel implements Parcelable {
         @Override
         public void writeToParcel(Parcel parcel, int flags) {
             parcel.writeString(getAnswer());
-            parcel.writeString(getCode());
+            parcel.writeInt(getCode());
         }
 
         private void readFromParcel(Parcel in) {
             answer = in.readString();
-            code = in.readString();
+            code = in.readInt();
         }
 
         public static final Parcelable.Creator<ResponseOption> CREATOR =
@@ -52,7 +53,7 @@ public class QuestionNotificationModel implements Parcelable {
             return answer;
         }
 
-        public String getCode() {
+        public int getCode() {
             return code;
         }
     }
@@ -93,6 +94,8 @@ public class QuestionNotificationModel implements Parcelable {
 
     private String question;
     private List<ResponseOption> options;
+
+    @SerializedName("question_id")
     private String questionId;
 
     public String getQuestion() {

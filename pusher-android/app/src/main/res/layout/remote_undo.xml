@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="horizontal"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+
+    <!--android:text="UNDO"-->
+    <!-- for smallcaps:
+    http://stackoverflow.com/questions/15963396/small-caps-on-textviews-edittexts-and-buttons-in-android
+    roboto font http://stackoverflow.com/questions/25217501/how-can-i-create-a-notification-with-an-undo-button-like-gmail -->
+    <Button
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_width="wrap_content"
+        android:drawableLeft="@drawable/ic_menu_revert"
+        android:fontFamily="sans-serif-condensed"
+        android:layout_marginRight="20dp"
+        android:layout_height="fill_parent"
+        android:text="ᴜɴᴅᴏ"
+        android:gravity="center_vertical"
+        android:layout_alignParentRight="true"
+        android:id="@+id/button"
+        android:layout_gravity="center_vertical"/>
+    <View
+        android:layout_width="0.2dp"
+        android:layout_height="fill_parent"
+        android:id="@+id/separator"
+        android:visibility="visible"
+        android:layout_toLeftOf="@id/button"
+        android:background="@android:color/darker_gray"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:layout_height="fill_parent"
+        android:gravity="center_vertical"
+        android:text="Submitted"
+        android:id="@+id/textView"
+        android:layout_centerVertical="true"
+        android:layout_toLeftOf="@id/separator"
+        android:layout_alignParentLeft="true"
+        android:layout_gravity="center_vertical"/>
+
+</RelativeLayout>

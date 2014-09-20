@@ -49,10 +49,14 @@
             android:label="@string/title_activity_new_question" >
         </activity>
 
-        <service
-            android:name=".ResponseRecorderService"
-            android:exported="false" >
-        </service>
+        <receiver
+            android:name=".ResponseRecorderReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="net.cloudhacking.pusher.intent.RECORD_RESPONSE" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

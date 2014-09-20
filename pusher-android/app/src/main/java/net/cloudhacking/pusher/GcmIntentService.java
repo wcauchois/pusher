@@ -11,11 +11,15 @@ import android.util.Log;
 
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class GcmIntentService extends IntentService {
 
     static final String TAG = "GcmIntentService";
 
-    public static final int NOTIFICATION_ID = 1;
+    public static final int NOTIFICATION_IDS_START = 50000;
+    private static AtomicInteger nextNotificationId = new AtomicInteger(NOTIFICATION_IDS_START);
+
     private NotificationManager mNotificationManager;
 
     public GcmIntentService() {
@@ -55,6 +59,10 @@ public class GcmIntentService extends IntentService {
         GcmBroadcastReceiver.completeWakefulIntent(intent);
     }
 
+    private int getNotificationId() {
+        return nextNotificationId.getAndIncrement();
+    }
+
     // Put the message into a notification and post it.
     // This is just one simple example of what you might choose to do with
     // a GCM message.
@@ -81,22 +89,25 @@ public class GcmIntentService extends IntentService {
                         .setStyle(new NotificationCompat.BigTextStyle()
                                 .bigText(model.getQuestion()))
                         .setContentText(model.getQuestion())
-                        .setVibrate(new long[] { 0, 500 });
+                        .setVibrate(new long[] { 0, 200 });
+
+        int notificationId = getNotificationId();
 
         for (QuestionNotificationModel.ResponseOption option : model.getOptions()) {
-            Intent recorderIntent = new Intent(GcmIntentService.this,
-                    ResponseRecorderService.class);
-            recorderIntent.putExtra(ResponseRecorderService.EXTRA_RESPONSE_CODE,
-                    option.getCode());
-            recorderIntent.putExtra(ResponseRecorderService.EXTRA_QUESTION_ID,
+            Intent recorderIntent = new Intent(
+                    ResponseRecorderReceiver.INTENT_RECORD_RESPONSE);
+            recorderIntent.putExtra(ResponseRecorderReceiver.EXTRA_QUESTION_ID,
                     model.getQuestionId());
-            PendingIntent recorderPendingIntent = PendingIntent.getService(
-                    GcmIntentService.this, 0, recorderIntent, 0);
+            recorderIntent.putExtra(ResponseRecorderReceiver.EXTRA_RESPONSE_CODE,
+                    (int)option.getCode());
+            recorderIntent.putExtra(ResponseRecorderReceiver.EXTRA_NOTIFICATION_ID, notificationId);
+            PendingIntent recorderPendingIntent = PendingIntent.getBroadcast(
+                    GcmIntentService.this, option.getCode(), recorderIntent, PendingIntent.FLAG_UPDATE_CURRENT);
             mBuilder.addAction(0, option.getAnswer(), recorderPendingIntent);
         }
 
         mBuilder.setContentIntent(contentIntent);
-        mNotificationManager.notify(NOTIFICATION_ID, mBuilder.build());
+        mNotificationManager.notify(notificationId, mBuilder.build());
     }
 }
 
