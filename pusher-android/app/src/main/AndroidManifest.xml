@@ -48,6 +48,11 @@
             android:name=".NewQuestionActivity"
             android:label="@string/title_activity_new_question" >
         </activity>
+
+        <service
+            android:name=".ResponseRecorderService"
+            android:exported="false" >
+        </service>
     </application>
 
 </manifest>

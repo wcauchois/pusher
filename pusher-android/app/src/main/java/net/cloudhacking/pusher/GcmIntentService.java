@@ -39,17 +39,16 @@ public class GcmIntentService extends IntentService {
              */
             if (GoogleCloudMessaging.
                     MESSAGE_TYPE_SEND_ERROR.equals(messageType)) {
-                sendNotification("Send error: " + extras.toString());
+                Log.e(TAG, "Send error: " + extras.toString());
             } else if (GoogleCloudMessaging.
                     MESSAGE_TYPE_DELETED.equals(messageType)) {
-                sendNotification("Deleted messages on server: " +
-                        extras.toString());
+                Log.d(TAG, "Deleted messages on server: " + extras.toString());
                 // If it's a regular GCM message, do some work.
             } else if (GoogleCloudMessaging.
                     MESSAGE_TYPE_MESSAGE.equals(messageType)) {
                 // Post notification of received message.
-                sendNotification("Received: " + extras.toString());
                 Log.i(TAG, "Received: " + extras.toString());
+                sendNotification(extras);
             }
         }
         // Release the wake lock provided by the WakefulBroadcastReceiver.
@@ -59,20 +58,42 @@ public class GcmIntentService extends IntentService {
     // Put the message into a notification and post it.
     // This is just one simple example of what you might choose to do with
     // a GCM message.
-    private void sendNotification(String msg) {
+    private void sendNotification(Bundle dataFromServer) {
         mNotificationManager = (NotificationManager)
                 this.getSystemService(Context.NOTIFICATION_SERVICE);
 
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
                 new Intent(this, MainActivity.class), 0);
 
+        /*String msg = dataFromServer.getString("question");
+        Bundle responseOptionDict = dataFromServer.getBundle("options");*/
+        String msg = "hey";
+
+        QuestionNotificationModel model = QuestionNotificationModel.fromJson(
+                dataFromServer.getString("json_data"));
+
+        //Log.i(TAG, "Got question model: " + model);
+
         NotificationCompat.Builder mBuilder =
                 new NotificationCompat.Builder(this)
                         .setSmallIcon(R.drawable.ic_launcher)
-                        .setContentTitle("GCM Notification")
+                        .setContentTitle("Pusher")
                         .setStyle(new NotificationCompat.BigTextStyle()
-                                .bigText(msg))
-                        .setContentText(msg);
+                                .bigText(model.getQuestion()))
+                        .setContentText(model.getQuestion())
+                        .setVibrate(new long[] { 0, 500 });
+
+        for (QuestionNotificationModel.ResponseOption option : model.getOptions()) {
+            Intent recorderIntent = new Intent(GcmIntentService.this,
+                    ResponseRecorderService.class);
+            recorderIntent.putExtra(ResponseRecorderService.EXTRA_RESPONSE_CODE,
+                    option.getCode());
+            recorderIntent.putExtra(ResponseRecorderService.EXTRA_QUESTION_ID,
+                    model.getQuestionId());
+            PendingIntent recorderPendingIntent = PendingIntent.getService(
+                    GcmIntentService.this, 0, recorderIntent, 0);
+            mBuilder.addAction(0, option.getAnswer(), recorderPendingIntent);
+        }
 
         mBuilder.setContentIntent(contentIntent);
         mNotificationManager.notify(NOTIFICATION_ID, mBuilder.build());
