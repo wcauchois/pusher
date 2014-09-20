@@ -7,17 +7,21 @@
             [compojure.core :refer :all]
             [compojure.route :as route]
             [ring.adapter.jetty :refer [run-jetty]]
-            [ring.middleware.logger :as logger]
-            [clojure.tools.logging :as log])
-  (:import [java.util.concurrent Executor]))
+            [ring.middleware.logger :refer [wrap-with-logger]]
+            [ring.middleware.params :refer [wrap-params]]
+            [environ.core :refer [env]]
+            [ring.util.response :refer :all]
+            [clojure.tools.logging :as log]
+            [pusher.gcm-client :as gcm-client])
+  (:import [java.util.concurrent Executor]
+           [org.bson.types ObjectId]))
 
 (def ^:dynamic *mongo-conn* nil)
 (def ^:dynamic *mongo-db* nil)
 
 (defn json-resp [coll]
-  {:status 200
-   :headers {"Content-Type" "application/json"}
-   :body (json/write-str coll)})
+  (-> (response (json/write-str coll))
+      (content-type "application/json")))
 
 (defn list-users-handler [request]
   (let [all-users (mc/find-maps *mongo-db* "users")
@@ -42,10 +46,41 @@
   (reset! (:exit t) true)
   (doto (:thread t) (.interrupt) (.join)))
 
+(defn register-device-handler [request]
+  (let [reg-id (or (get (:params request) "regId")
+                   (throw (Exception. "Missing regId parameter")))
+        _ (log/infof "Received registration ID: %s" reg-id)
+        existing-user (mc/find-one-as-map *mongo-db* "users" {:registration_id reg-id})
+        new-or-existing-user
+          (if existing-user
+             (do
+               (log/infof "Found existing user: %s" (:_id existing-user))
+               existing-user)
+             (do
+               (log/info "No existing user found, creating a new one")
+               (mc/insert-and-return *mongo-db* "users" {:registration_id reg-id}))
+           )]
+    (json-resp {:user_id (.toString (:_id new-or-existing-user))})))
+
+(defn test-send-handler [request]
+  (let [user-id (ObjectId. (get (:params request) "userId"))
+        user (or (mc/find-map-by-id *mongo-db* "users" user-id)
+                 (throw (Exception. "User not found")))
+        msg (or (get (:params request) "msg") "Test message...")]
+     (gcm-client/gsend {:msg msg} :registration_ids [(:registration_id user)])
+     (json-resp {"OK" true})))
+
 (defroutes app
   (GET "/" [] "Hello")
-  (GET "/api/v1/listusers" [] list-users-handler)
+  (GET "/api/listusers" [] list-users-handler)
+  (POST "/api/registerdevice" [] register-device-handler)
+  (POST "/api/testsend" [] test-send-handler)
   (route/not-found "<h1>Page not found</h1>"))
+
+(def full-app
+  (-> app
+      wrap-params ; Adds :query-params, :form-params, and :params to each request.
+      wrap-with-logger))
 
 (defn -main [& args]
   ; Connect to Mongo instance on localhost
@@ -57,5 +92,5 @@
       (Thread. (fn []
                  (println "Shutting down")
                  (stop-polling-thread polling-thread))))
-    (run-jetty (logger/wrap-with-logger app) {:port 8080})))
+    (run-jetty full-app {:port 8001})))
 

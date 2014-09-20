@@ -1,5 +1,7 @@
 config/production.json
+.nrepl-port
 config/development.json
+.lein-env
 profiles.clj
 *.swp
 .lein-repl-history
