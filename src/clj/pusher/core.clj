@@ -67,7 +67,7 @@
         user (or (mc/find-map-by-id *mongo-db* "users" user-id)
                  (throw (Exception. "User not found")))
         msg (or (get (:params request) "msg") "Test message...")]
-     (gcm-client/gsend {:msg msg} :registration_ids [(:registration_id user)])
+     (gcm-client/dosend {:msg msg} :registration_ids [(:registration_id user)])
      (json-resp {"OK" true})))
 
 (defroutes app

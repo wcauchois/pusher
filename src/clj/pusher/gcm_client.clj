@@ -41,7 +41,7 @@
        nil)))
 
 ; At a minimum, require :registration-ids option (list of IDs to send to).
-(defn gsend [data & options]
+(defn dosend [data & options]
   (let [options-map (apply hash-map options)
         combined-options
           (filter (fn [[_ v]] (not (nil? v)))
