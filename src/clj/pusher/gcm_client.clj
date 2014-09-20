@@ -18,7 +18,7 @@
 
 (def google-api-server "android.googleapis.com")
 
-(defn -make-json-request [endpoint payload]
+(defn make-json-request [endpoint payload]
   (let [json-string
           (json/write-str payload :key-fn #(-> % name (.replace "-" "_")))
         full-url (format "http://%s%s" google-api-server endpoint)]
@@ -47,5 +47,5 @@
           (filter (fn [[_ v]] (not (nil? v)))
             (into default-send-options options-map))
         payload (into {:data data} combined-options)]
-    (-make-json-request "/gcm/send" payload)))
+    (make-json-request "/gcm/send" payload)))
 
