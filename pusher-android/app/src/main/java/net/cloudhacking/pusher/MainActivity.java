@@ -2,6 +2,7 @@ package net.cloudhacking.pusher;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -113,7 +114,7 @@ public class MainActivity extends Activity {
     private void sendRegistrationIdToBackend(String regId) {
         // XXX use AndroidHttpClient?
         HttpClient client = new DefaultHttpClient();
-        String url = "http://pusher.cloudhacking.net/register_device";
+        String url = "http://pusher.cloudhacking.net/api/registerdevice";
         HttpPost post = new HttpPost(url);
         try {
             List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(1);
@@ -187,6 +188,14 @@ public class MainActivity extends Activity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.action_settings) {
+            return true;
+        } else if (id == R.id.action_clear_prefs) {
+            SharedPreferences prefs = getGCMPreferences(context);
+            prefs.edit().clear().apply();
+            return true;
+        } else if (id == R.id.action_create_schedule) {
+            Intent intent = new Intent(this, NewQuestionActivity.class);
+            startActivity(intent);
             return true;
         }
         return super.onOptionsItemSelected(item);
