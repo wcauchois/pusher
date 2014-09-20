@@ -2,6 +2,8 @@
   (:gen-class)
   (:require [monger.core :as mg]
             [monger.collection :as mc]
+            [monger.operators :refer :all]
+            [monger.joda-time]
             [clojure.data.json :as json]
             [monger.util :refer [object-id]]
             [compojure.core :refer :all]
@@ -14,7 +16,8 @@
             [clojure.tools.logging :as log]
             [pusher.gcm-client :as gcm-client])
   (:import [java.util.concurrent Executor]
-           [org.bson.types ObjectId]))
+           [org.bson.types ObjectId]
+           [org.joda.time DateTime]))
 
 (def ^:dynamic *mongo-conn* nil)
 (def ^:dynamic *mongo-db* nil)
@@ -66,15 +69,32 @@
   (let [user-id (ObjectId. (get (:params request) "userId"))
         user (or (mc/find-map-by-id *mongo-db* "users" user-id)
                  (throw (Exception. "User not found")))
-        msg (or (get (:params request) "msg") "Test message...")]
-     (gcm-client/dosend {:msg msg} :registration_ids [(:registration_id user)])
+        msg (or (get (:params request) "msg") "Did you have lunch today?")
+        data {
+          :json-data (json/write-str
+                        {:question msg
+                         :question_id (str (ObjectId.))
+                         :options [{:answer "Yes" :code 0}
+                                   {:answer "No" :code 1}]})
+        }]
+     (gcm-client/dosend data :registration_ids [(:registration_id user)])
      (json-resp {"OK" true})))
+
+(defn record-response-handler [request]
+  (let [question-id (get-in request [:params "questionId"])
+        answer-code (get-in request [:params "code"])]
+    (mc/update *mongo-db* "answers"
+      {:question-id question-id} {$set {:question-id question-id}
+        $push {:answers {:code answer-code :date (DateTime/now)}}
+      } {:upsert true})
+    (json-resp {"OK" true})))
 
 (defroutes app
   (GET "/" [] "Pusher is an app. For your phone.")
   (GET "/api/listusers" [] list-users-handler)
   (POST "/api/registerdevice" [] register-device-handler)
   (POST "/api/testsend" [] test-send-handler)
+  (POST "/api/recordresponse" [] record-response-handler)
   (route/not-found "<h1>Page not found</h1>"))
 
 (def full-app

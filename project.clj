@@ -7,7 +7,8 @@
                  [org.clojure/data.json "0.2.5"]
                  [environ "1.0.0"]
                  [ring.middleware.logger "0.5.0"]
-                 [clj-http "1.0.0"]]
+                 [clj-http "1.0.0"]
+                 [joda-time "2.4"]]
   :plugins [[lein-environ "1.0.0"]]
   :main pusher.core
   :aot [pusher.core])
