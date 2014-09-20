@@ -71,7 +71,7 @@
      (json-resp {"OK" true})))
 
 (defroutes app
-  (GET "/" [] "Hello")
+  (GET "/" [] "Pusher is an app. For your phone.")
   (GET "/api/listusers" [] list-users-handler)
   (POST "/api/registerdevice" [] register-device-handler)
   (POST "/api/testsend" [] test-send-handler)
