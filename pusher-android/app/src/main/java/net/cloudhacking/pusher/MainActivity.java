@@ -8,10 +8,12 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.TextView;
+import android.view.View;
+import android.widget.ImageView;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
@@ -46,14 +48,16 @@ public class MainActivity extends Activity {
     SharedPreferences prefs;
     Context context;
     String regId;
-    TextView mDisplay;
+    ImageView imageView2;
+    int whichIcon = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mDisplay = (TextView) findViewById(R.id.test_text);
+        imageView2 = (ImageView) findViewById(R.id.imageView2);
+        imageView2.setOnClickListener(new ImageViewOnClickListener());
 
         checkPlayServices();
 
@@ -62,6 +66,20 @@ public class MainActivity extends Activity {
         regId = getRegistrationId(context);
         if (regId.isEmpty()) {
             registerInBackground(context);
+        }
+    }
+
+    private class ImageViewOnClickListener implements View.OnClickListener {
+        @Override
+        public void onClick(View view) {
+            Vibrator v = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+            v.vibrate(50);
+            whichIcon = (whichIcon + 1) % 2;
+            if (whichIcon == 0) {
+                imageView2.setImageResource(R.drawable.ios_emoji_boy_smaller);
+            } else if (whichIcon == 1) {
+                imageView2.setImageResource(R.drawable.ios_emoji_girl_smaller);
+            }
         }
     }
 
@@ -96,7 +114,6 @@ public class MainActivity extends Activity {
 
             @Override
             protected void onPostExecute(String msg) {
-                mDisplay.append(msg + "\n");
             }
         }.execute();
     }

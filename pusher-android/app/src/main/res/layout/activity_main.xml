@@ -9,9 +9,46 @@
     tools:context=".MainActivity">
 
     <TextView
-        android:text="Testing 123"
-        android:id="@+id/test_text"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:textSize="30dp"
+        android:text="Welcome to Pusher"
+        android:textStyle="bold"
+        android:id="@+id/textView"
+        android:layout_marginBottom="20dp"
+        android:layout_centerHorizontal="true"/>
 
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/textView"
+        android:id="@+id/imageView"
+        android:src="@drawable/downward_arrow"
+        android:layout_centerHorizontal="true"/>
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/imageView2"
+        android:layout_below="@id/imageView"
+        android:src="@drawable/ios_emoji_boy_smaller"
+        android:layout_centerHorizontal="true"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/imageView2"
+        android:text="Pusher sends you questions at pre-determined times of day. Your answers get tracked over time and can yield insights about your quantified self."
+        android:id="@+id/textView2"
+        android:gravity="center"
+        android:layout_marginBottom="20dp"
+        android:layout_centerHorizontal="true"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Get Started"
+        android:id="@+id/button2"
+        android:layout_below="@id/textView2"
+        android:layout_centerHorizontal="true"/>
 </RelativeLayout>
