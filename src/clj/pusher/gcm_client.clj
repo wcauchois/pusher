@@ -1,4 +1,5 @@
 (ns pusher.gcm-client
+  (:refer-clojure :exclude [send])
   (:require [clj-http.client :as http]
             [clojure.data.json :as json]
             [clojure.tools.logging :as log]
@@ -41,7 +42,7 @@
        nil)))
 
 ; At a minimum, require :registration-ids option (list of IDs to send to).
-(defn dosend [data & options]
+(defn send [data & options]
   (let [options-map (apply hash-map options)
         combined-options
           (filter (fn [[_ v]] (not (nil? v)))

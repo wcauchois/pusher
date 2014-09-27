@@ -14,20 +14,18 @@
             [environ.core :refer [env]]
             [ring.util.response :refer :all]
             [clojure.tools.logging :as log]
-            [pusher.gcm-client :as gcm-client])
+            [pusher.gcm-client :as gcm-client]
+            [pusher.connection :refer :all])
   (:import [java.util.concurrent Executor]
            [org.bson.types ObjectId]
            [org.joda.time DateTime]))
-
-(def ^:dynamic *mongo-conn* nil)
-(def ^:dynamic *mongo-db* nil)
 
 (defn json-resp [coll]
   (-> (response (json/write-str coll))
       (content-type "application/json")))
 
 (defn list-users-handler [request]
-  (let [all-users (mc/find-maps *mongo-db* "users")
+  (let [all-users (mc/find-maps @mongo-db "users")
         rendered-users
           (map (fn [u] (update-in u [:_id] #(.toString %))) all-users)]
     (json-resp {:users rendered-users})))
@@ -53,7 +51,7 @@
   (let [reg-id (or (get (:params request) "regId")
                    (throw (Exception. "Missing regId parameter")))
         _ (log/infof "Received registration ID: %s" reg-id)
-        existing-user (mc/find-one-as-map *mongo-db* "users" {:registration_id reg-id})
+        existing-user (mc/find-one-as-map @mongo-db "users" {:registration_id reg-id})
         new-or-existing-user
           (if existing-user
              (do
@@ -61,13 +59,13 @@
                existing-user)
              (do
                (log/info "No existing user found, creating a new one")
-               (mc/insert-and-return *mongo-db* "users" {:registration_id reg-id}))
+               (mc/insert-and-return @mongo-db "users" {:registration_id reg-id}))
            )]
     (json-resp {:user_id (.toString (:_id new-or-existing-user))})))
 
 (defn test-send-handler [request]
   (let [user-id (ObjectId. (get (:params request) "userId"))
-        user (or (mc/find-map-by-id *mongo-db* "users" user-id)
+        user (or (mc/find-map-by-id @mongo-db "users" user-id)
                  (throw (Exception. "User not found")))
         msg (or (get (:params request) "msg") "Did you have lunch today?")
         data {
@@ -77,13 +75,13 @@
                          :options [{:answer "Yes" :code 0}
                                    {:answer "No" :code 1}]})
         }]
-     (gcm-client/dosend data :registration_ids [(:registration_id user)])
+     (gcm-client/send data :registration_ids [(:registration_id user)])
      (json-resp {"OK" true})))
 
 (defn record-response-handler [request]
   (let [question-id (get-in request [:params "questionId"])
         answer-code (get-in request [:params "code"])]
-    (mc/update *mongo-db* "answers"
+    (mc/update @mongo-db "answers"
       {:question-id question-id} {$set {:question-id question-id}
         $push {:answers {:code answer-code :date (DateTime/now)}}
       } {:upsert true})
@@ -103,9 +101,7 @@
       wrap-with-logger))
 
 (defn -main [& args]
-  ; Connect to Mongo instance on localhost
-  (alter-var-root (var *mongo-conn*) (fn [_] (mg/connect)))
-  (alter-var-root (var *mongo-db*) (fn [_] (mg/get-db *mongo-conn* "pusher")))
+  (mongo-connect!)
   (let [polling-thread (start-polling-thread)]
     (.addShutdownHook
       (Runtime/getRuntime)
