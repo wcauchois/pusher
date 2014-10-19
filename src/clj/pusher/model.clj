@@ -38,7 +38,7 @@
         make-function-name #(symbol (format % decamelcased-name))
         collection-name (pluralize (decamelcase model-name-str \_))]
     `(do
-        (def ^{:collection-name ~collection-name} ~model-name ~schema)
+        (def ~model-name (with-meta ~schema {:collection-name ~collection-name}))
         ; validate-model
         (defn ~(make-function-name "validate-%s") [m#]
           (s/validate ~model-name m#))
