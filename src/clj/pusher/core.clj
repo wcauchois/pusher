@@ -106,7 +106,8 @@
     (.addShutdownHook
       (Runtime/getRuntime)
       (Thread. (fn []
-                 (println "Shutting down")
+                 (log/info "Shutting down")
                  (stop-polling-thread polling-thread))))
+    (log/info (format "Using port %d" 8001))
     (run-jetty full-app {:port 8001})))
 
